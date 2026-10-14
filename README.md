@@ -16,6 +16,24 @@
 
 </div>
 
+> ## ⚠️ Fork z poprawkami mobiDziennik (2026)
+>
+> Ten fork zawiera naprawę obsługi **mobiDziennik** po wycofaniu przez serwis starych endpointów `/api/*` (m.in. `/api/`, `/api/zrzutbazy`). Bez tych zmian aplikacja nie logowała się (błąd 210) i nie pobierała danych.
+>
+> **Co naprawiono:**
+> - **Logowanie** — przez formularz webowy `POST /dziennik` zamiast martwego `/api/` (fix błędu 210)
+> - **Pierwsze logowanie** — id i imię ucznia z `/dziennik/frekwencja` (fix błędu 906)
+> - **Funkcje** — usunięto martwy `ENDPOINT_MOBIDZIENNIK_API_MAIN` (fix 4× błędu 214)
+> - **Oceny** — regex „liczona do średniej" akceptuje teraz `tak|nie` (wcześniej odrzucał liczone oceny)
+> - **Plan lekcji** — pobieranie bazowego tygodnia `podstawowy` przy synchronizacji
+> - **Kalendarz** — zachowanie zdarzeń `sprawdzian;` (kartkówki + sprawdziany) i `wycieczka;`
+> - **Wiadomości** — imiona nadawców przez `getTeacherByLastFirst()` (`teacherList` jest pusty po usunięciu dumpa)
+> - **Zachowanie** — nowy parser uwag i pochwał z `/mobile/zachowanie`
+>
+> **Nie naprawiono:** zadania domowe — endpoint `/mobile/zadaniadomowe` działa, ale zmienił strukturę (karty zamiast tabel) i jest obecnie pusty; parser wymaga realnych danych do testu.
+>
+> Gotowy APK do testów znajdziesz w [release](https://github.com/matidht22-png/szkolny-android-mobidziennik-fix/releases).
+
 ## Ważna informacja
 
 Jak zapewne już wiecie, we wrześniu 2020 r. **firma Librus zabroniła nam** publikowania w sklepie Google Play naszej aplikacji z obsługą dziennika Librus&reg; Synergia. Prowadziliśmy rozmowy, aby **umożliwić Wam wygodny, bezpłatny dostęp do Waszych ocen, wiadomości, zadań domowych**, jednak oczekiwania firmy Librus zdecydowanie przekroczyły wszelkie nasze możliwości finansowe. Mając na uwadze powyższe względy, zdecydowaliśmy się opublikować kod źródłowy aplikacji Szkolny.eu. Liczymy, że dzięki temu aplikacja będzie mogła dalej funkcjonować, być rozwijana, pomagając Wam w czasie zdalnego nauczania i przez kolejne lata nauki.
