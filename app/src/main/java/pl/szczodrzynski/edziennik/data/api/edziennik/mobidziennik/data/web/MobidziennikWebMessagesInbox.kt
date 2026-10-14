@@ -61,8 +61,10 @@ class MobidziennikWebMessagesInbox(override val data: DataMobidziennik,
                 date.year = currentYear
 
                 val senderEl = item.select("td:eq(3)").first()
-                val senderName = senderEl?.ownText().fixName()
-                val senderId = data.teacherList.singleOrNull { it.fullNameLastFirst == senderName }?.id
+                // Sender cell is "Surname Name (Role)" — drop the role parenthetical.
+                val senderName = senderEl?.ownText()?.substringBefore(" (")?.trim()?.fixName() ?: ""
+                // teacherList is no longer filled by the /api dump, so resolve (and create) on demand.
+                val senderId = if (senderName.isNotEmpty()) data.getTeacherByLastFirst(senderName).id else null
                 data.messageRecipientIgnoreList.add(MessageRecipient(profileId, -1, id))
 
                 val isRead = item.select("td:eq(5) span").first()?.hasClass("wiadomosc_przeczytana") == true

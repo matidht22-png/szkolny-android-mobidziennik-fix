@@ -61,7 +61,7 @@ object Regexes {
         """Wpisano:.*<strong>.+?,\s([0-9]+)\s(.+?)\s([0-9]{4}),\sgodzina\s([0-9:]+)</strong>""".toRegex(DOT_MATCHES_ALL)
     }
     val MOBIDZIENNIK_GRADES_COUNT_TO_AVG by lazy {
-        """Liczona do średniej:.*?<strong>nie<br/?></strong>""".toRegex(DOT_MATCHES_ALL)
+        """Liczona do średniej:.*?<strong>(?:tak|nie)<br/?></strong>""".toRegex(DOT_MATCHES_ALL)
     }
     val MOBIDZIENNIK_GRADES_DETAILS by lazy {
         """<strong.*?>(.+?)</strong>.*?<sup>.+?</sup>.*?(?:<small>\((.+?)\)</small>.*?)?<span>.*?Wartość oceny:.*?<strong>([0-9.]+)</strong>.*?Wpisał\(a\):.*?<strong>(.+?)</strong>.*?(?:Komentarz:.*?<strong>(.+?)</strong>)?</span>""".toRegex(DOT_MATCHES_ALL)

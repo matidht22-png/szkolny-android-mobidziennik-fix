@@ -95,7 +95,9 @@ class MobidziennikWebTimetable(
         else {
             val types = when {
                 syncFutureDate || syncPastDate -> mutableListOf("podstawowy", "pozalekcyjny")
-                syncExtraLessons -> mutableListOf("pozalekcyjny")
+                // The /api/zrzutbazy dump (which used to supply base lessons) is gone,
+                // so the web scraper must fetch the base "podstawowy" timetable too.
+                syncExtraLessons -> mutableListOf("podstawowy", "pozalekcyjny")
                 else -> mutableListOf()
             }
 

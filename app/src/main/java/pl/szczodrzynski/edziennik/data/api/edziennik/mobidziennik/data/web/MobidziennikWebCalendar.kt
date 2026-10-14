@@ -35,7 +35,10 @@ class MobidziennikWebCalendar(override val data: DataMobidziennik,
                     val event = eventEl.asJsonObject
 
                     val idStr = event.getString("id")
-                    if (idStr?.startsWith("kalendarz;") != true) {
+                    // Keep class events, tests/quizzes (kartkówki + sprawdziany) and excursions.
+                    if (idStr?.startsWith("kalendarz;") != true &&
+                        idStr?.startsWith("sprawdzian;") != true &&
+                        idStr?.startsWith("wycieczka;") != true) {
                         continue
                     }
                     val idParts = idStr.split(";")

@@ -26,7 +26,7 @@ const val ENDPOINT_MOBIDZIENNIK_API2_MAIN               = 3000
 val MobidziennikFeatures = listOf(
         // always synced
         Feature(LoginType.MOBIDZIENNIK, FeatureType.ALWAYS_NEEDED, listOf(
-                ENDPOINT_MOBIDZIENNIK_API_MAIN to LoginMethod.MOBIDZIENNIK_WEB,
+                // ENDPOINT_MOBIDZIENNIK_API_MAIN removed: /api/zrzutbazy is decommissioned.
                 ENDPOINT_MOBIDZIENNIK_WEB_ACCOUNT_EMAIL to LoginMethod.MOBIDZIENNIK_WEB
         )), // TODO divide features into separate view IDs (all with API_MAIN)
 
@@ -51,21 +51,18 @@ val MobidziennikFeatures = listOf(
          * Agenda - "API" + web scraping.
          */
         Feature(LoginType.MOBIDZIENNIK, FeatureType.AGENDA, listOf(
-                ENDPOINT_MOBIDZIENNIK_API_MAIN to LoginMethod.MOBIDZIENNIK_WEB,
                 ENDPOINT_MOBIDZIENNIK_WEB_CALENDAR to LoginMethod.MOBIDZIENNIK_WEB
         )),
         /**
          * Grades - "API" + web scraping.
          */
         Feature(LoginType.MOBIDZIENNIK, FeatureType.GRADES, listOf(
-                ENDPOINT_MOBIDZIENNIK_API_MAIN to LoginMethod.MOBIDZIENNIK_WEB,
                 ENDPOINT_MOBIDZIENNIK_WEB_GRADES to LoginMethod.MOBIDZIENNIK_WEB
         )),
         /**
          * Behaviour - "API" + web scraping.
          */
         Feature(LoginType.MOBIDZIENNIK, FeatureType.BEHAVIOUR, listOf(
-                ENDPOINT_MOBIDZIENNIK_API_MAIN to LoginMethod.MOBIDZIENNIK_WEB,
                 ENDPOINT_MOBIDZIENNIK_WEB_NOTICES to LoginMethod.MOBIDZIENNIK_WEB
         )),
         /**

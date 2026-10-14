@@ -9,11 +9,20 @@ import pl.szczodrzynski.edziennik.data.db.entity.Profile
 import pl.szczodrzynski.edziennik.data.db.enums.LoginType
 import pl.szczodrzynski.edziennik.ext.fixName
 import pl.szczodrzynski.edziennik.ext.set
-import pl.szczodrzynski.edziennik.utils.models.Date
+import java.util.regex.Pattern
 
 class MobidziennikFirstLogin(val data: DataMobidziennik, val onSuccess: () -> Unit) {
     companion object {
         private const val TAG = "MobidziennikFirstLogin"
+
+        // The old /api/zrzutbazy "database dump" endpoint was decommissioned by the
+        // mobiDziennik servers (it now redirects to forbidden.jpg). Student identity is
+        // instead read from the live /dziennik/frekwencja page, which lists the logged-in
+        // student(s) as <option value="STUDENT_ID" selected>SURNAME NAME</option>.
+        private val STUDENT_OPTION = Pattern.compile(
+                "<option\\s+value=\"(\\d+)\"\\s+selected[^>]*>([^<]+)</option>",
+                Pattern.CASE_INSENSITIVE
+        )
     }
 
     private val web = MobidziennikWeb(data, null)
@@ -23,44 +32,19 @@ class MobidziennikFirstLogin(val data: DataMobidziennik, val onSuccess: () -> Un
         var firstProfileId = data.loginStore.id
 
         MobidziennikLoginWeb(data) {
-            web.webGet(TAG, "/api/zrzutbazy") { text ->
-                val tables = text.split("T@B#LA")
-
-                val accountNameLong = run {
-                    tables[0]
-                            .split("\n")
-                            .map { it.split("|") }
-                            .singleOrNull { it.getOrNull(1) != "*" }
-                            ?.let {
-                                "${it[4]} ${it[5]}".fixName()
-                            }
-                }
-
-                var dateSemester1Start: Date? = null
-                var dateSemester2Start: Date? = null
-                var dateYearEnd: Date? = null
-                for (row in tables[3].split("\n")) {
-                    if (row.isEmpty())
-                        continue
-                    val cols = row.split("|")
-
-                    when (cols[1]) {
-                        "semestr1_poczatek" -> dateSemester1Start = Date.fromYmd(cols[3])
-                        "semestr2_poczatek" -> dateSemester2Start = Date.fromYmd(cols[3])
-                        "koniec_roku_szkolnego" -> dateYearEnd = Date.fromYmd(cols[3])
-                    }
-                }
-
-                tables[8].split("\n").forEach { student ->
-                    if (student.isEmpty())
-                        return@forEach
-                    val student1 = student.split("|")
-                    if (student1.size == 2)
-                        return@forEach
-
-                    val studentNameLong = "${student1[2]} ${student1[4]}".fixName()
-                    val studentNameShort = "${student1[2]} ${student1[4][0]}.".fixName()
-                    val accountName = if (accountNameLong == studentNameLong) null else accountNameLong
+            web.webGet(TAG, "/dziennik/frekwencja") { text ->
+                val matcher = STUDENT_OPTION.matcher(text)
+                while (matcher.find()) {
+                    val studentId = matcher.group(1).toInt()
+                    // Server renders "SURNAME NAME"; swap to "Name Surname" before fixName.
+                    val raw = matcher.group(2).trim()
+                    val parts = raw.split(" ")
+                    val swapped = if (parts.size > 1) "${parts.last()} ${parts.dropLast(1).joinToString(" ")}" else raw
+                    val studentNameLong = swapped.fixName()
+                    val surname = studentNameLong.substringAfterLast(' ').ifEmpty { studentNameLong }
+                    val givenInitial = studentNameLong.take(1)
+                    // Original format: "Surname N." (e.g. "Alechniewicz M.")
+                    val studentNameShort = "$surname $givenInitial.".fixName()
 
                     val profile = Profile(
                             firstProfileId++,
@@ -70,16 +54,10 @@ class MobidziennikFirstLogin(val data: DataMobidziennik, val onSuccess: () -> Un
                             data.loginUsername,
                             studentNameLong,
                             studentNameShort,
-                            accountName
+                            null
                     ).apply {
-                        studentData["studentId"] = student1[0].toInt()
+                        studentData["studentId"] = studentId
                     }
-                    dateSemester1Start?.let {
-                        profile.dateSemester1Start = it
-                        profile.studentSchoolYearStart = it.year
-                    }
-                    dateSemester2Start?.let { profile.dateSemester2Start = it }
-                    dateYearEnd?.let { profile.dateYearEnd = it }
                     profileList.add(profile)
                 }
 
