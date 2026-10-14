@@ -66,6 +66,12 @@ val MobidziennikFeatures = listOf(
                 ENDPOINT_MOBIDZIENNIK_WEB_NOTICES to LoginMethod.MOBIDZIENNIK_WEB
         )),
         /**
+         * Homework - only web scraping (the /api/zrzutbazy list is gone).
+         */
+        Feature(LoginType.MOBIDZIENNIK, FeatureType.HOMEWORK, listOf(
+                ENDPOINT_MOBIDZIENNIK_WEB_HOMEWORK to LoginMethod.MOBIDZIENNIK_WEB
+        )),
+        /**
          * Attendance - only web scraping.
          */
         Feature(LoginType.MOBIDZIENNIK, FeatureType.ATTENDANCE, listOf(

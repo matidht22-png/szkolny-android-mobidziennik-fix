@@ -88,8 +88,11 @@ class MobidziennikWebTimetable(
         val syncFutureDate = startDate > nextWeekEnd
         val syncPastDate = startDate < currentWeekStart
         val syncExtraLessons = System.currentTimeMillis() - (lastSync ?: 0) > 2 * DAY * MS
+        // The /api/zrzutbazy dump (which used to supply non-current weeks) is gone,
+        // so the web scraper must fetch any requested week that isn't the current one.
+        val syncRequestedWeek = startDate != currentWeekStart
         // sync not needed - everything present in the "API"
-        if (!syncFutureDate && !syncPastDate && !syncExtraLessons) {
+        if (!syncFutureDate && !syncPastDate && !syncExtraLessons && !syncRequestedWeek) {
             onSuccess(ENDPOINT_MOBIDZIENNIK_WEB_TIMETABLE)
         }
         else {
@@ -97,7 +100,7 @@ class MobidziennikWebTimetable(
                 syncFutureDate || syncPastDate -> mutableListOf("podstawowy", "pozalekcyjny")
                 // The /api/zrzutbazy dump (which used to supply base lessons) is gone,
                 // so the web scraper must fetch the base "podstawowy" timetable too.
-                syncExtraLessons -> mutableListOf("podstawowy", "pozalekcyjny")
+                syncExtraLessons || syncRequestedWeek -> mutableListOf("podstawowy", "pozalekcyjny")
                 else -> mutableListOf()
             }
 

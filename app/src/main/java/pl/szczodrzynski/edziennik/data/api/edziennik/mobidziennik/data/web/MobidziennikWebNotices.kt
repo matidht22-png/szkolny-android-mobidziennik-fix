@@ -8,8 +8,8 @@ import org.jsoup.Jsoup
 import pl.szczodrzynski.edziennik.data.api.edziennik.mobidziennik.DataMobidziennik
 import pl.szczodrzynski.edziennik.data.api.edziennik.mobidziennik.ENDPOINT_MOBIDZIENNIK_WEB_NOTICES
 import pl.szczodrzynski.edziennik.data.api.edziennik.mobidziennik.data.MobidziennikWeb
-import pl.szczodrzynski.edziennik.data.db.entity.Event
 import pl.szczodrzynski.edziennik.data.db.entity.Metadata
+import pl.szczodrzynski.edziennik.data.db.entity.Notice
 import pl.szczodrzynski.edziennik.data.db.entity.SYNC_ALWAYS
 import pl.szczodrzynski.edziennik.data.db.enums.MetadataType
 import pl.szczodrzynski.edziennik.ext.fixWhiteSpaces
@@ -29,7 +29,7 @@ class MobidziennikWebNotices(override val data: DataMobidziennik,
                 "<b>Uwaga:</b>\\s*(.+?)\\s*</p>" +
                         "\\s*<p><b>Treść:</b>\\s*(.*?)</p>" +
                         "\\s*<p><b>Kategoria:</b>\\s*(.*?)</p>" +
-                        "\\s*<p><b>Wpisano:</b>\\s*(?:\\w+,\\s*)?([0-9]+)\\s+(\\w+)\\s+([0-9]{4})",
+                        "\\s*<p><b>Wpisano:</b>\\s*(?:[\\w.]+,\\s*)?([0-9]+)\\s+(\\w+)\\s+([0-9]{4})",
                 RegexOption.DOT_MATCHES_ALL
         )
 
@@ -38,6 +38,9 @@ class MobidziennikWebNotices(override val data: DataMobidziennik,
                 "maja" to 5, "czerwca" to 6, "lipca" to 7, "sierpnia" to 8,
                 "września" to 9, "października" to 10, "listopada" to 11, "grudnia" to 12
         )
+
+        // School year: semester 1 = Sep..Jan, semester 2 = Feb..Aug.
+        private fun semesterFor(month: Int) = if (month in 9..12 || month == 1) 1 else 2
     }
 
     init {
@@ -52,31 +55,37 @@ class MobidziennikWebNotices(override val data: DataMobidziennik,
                 val month = MONTHS[m.groupValues[5]] ?: continue
                 val year = m.groupValues[6].toIntOrNull() ?: continue
 
-                val topic = buildString {
-                    append("Uwaga: $type")
-                    if (category.isNotEmpty()) append("\nKategoria: $category")
-                    if (content.isNotEmpty()) append("\n$content")
+                val noticeType = when (type.lowercase()) {
+                    "pozytywna" -> Notice.TYPE_POSITIVE
+                    "negatywna", "uwaga" -> Notice.TYPE_NEGATIVE
+                    else -> Notice.TYPE_NEUTRAL
                 }
 
-                val eventObject = Event(
-                        profileId = profileId,
-                        id = crc16(topic.toByteArray()).toLong(),
-                        date = Date(year, month, day), time = null,
-                        topic = topic,
-                        color = null,
-                        type = Event.TYPE_INFORMATION,
-                        teacherId = -1,
-                        subjectId = -1,
-                        teamId = data.teamClass?.id ?: -1
-                )
-                eventObject.isDownloaded = false
+                val noteText = buildString {
+                    append(content)
+                    if (category.isNotEmpty()) append("\nKategoria: $category")
+                }.ifBlank { type }
 
-                data.eventList.add(eventObject)
+                val addedDate = Date(year, month, day).inMillis
+                val id = crc16("$year-$month-$day|$type|$content".toByteArray()).toLong()
+
+                data.noticeList.add(
+                        Notice(
+                                profileId = profileId,
+                                id = id,
+                                type = noticeType,
+                                semester = semesterFor(month),
+                                text = noteText,
+                                category = category.ifBlank { null },
+                                points = null,
+                                teacherId = -1,
+                                addedDate = addedDate
+                        ))
                 data.metadataList.add(
                         Metadata(
                                 profileId,
-                                MetadataType.EVENT,
-                                eventObject.id,
+                                MetadataType.NOTICE,
+                                id,
                                 profile?.empty ?: false,
                                 profile?.empty ?: false
                         ))
