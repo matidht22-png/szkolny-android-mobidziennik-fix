@@ -67,61 +67,78 @@ open class MobidziennikWeb(open val data: DataMobidziennik, open val lastSync: L
             return
         }
 
-        val callback = object : TextCallbackHandler() {
-            override fun onSuccess(text: String?, response: Response?) {
-                if (text.isNullOrEmpty()) {
-                    data.error(ApiError(TAG, ERROR_RESPONSE_EMPTY)
-                            .withResponse(response))
-                    return
-                }
-                if (text == "Nie jestes zalogowany"
-                        || text.contains("przypomnij_haslo_email")) {
-                    data.error(ApiError(TAG, ERROR_MOBIDZIENNIK_WEB_ACCESS_DENIED)
-                            .withResponse(response))
-                    return
+        // mobiDziennik is load-balanced (SERVERID pinning). Under the rapid burst of
+        // requests a full sync fires, an occasional response comes back empty. Retry
+        // once before reporting ERROR_RESPONSE_EMPTY (100).
+        fun doRequest(retriesLeft: Int) {
+            val callback = object : TextCallbackHandler() {
+                override fun onSuccess(text: String?, response: Response?) {
+                    if (text.isNullOrEmpty()) {
+                        if (retriesLeft > 0) {
+                            d(tag, "Empty response from $url - retrying ($retriesLeft left)")
+                            doRequest(retriesLeft - 1)
+                            return
+                        }
+                        data.error(ApiError(TAG, ERROR_RESPONSE_EMPTY)
+                                .withResponse(response))
+                        return
+                    }
+                    if (text == "Nie jestes zalogowany"
+                            || text.contains("przypomnij_haslo_email")) {
+                        data.error(ApiError(TAG, ERROR_MOBIDZIENNIK_WEB_ACCESS_DENIED)
+                                .withResponse(response))
+                        return
+                    }
+
+                    if (text.contains("<h2>Problemy z wydajnością</h2>")) {
+                        data.error(ApiError(TAG, ERROR_MOBIDZIENNIK_WEB_SERVER_PROBLEM)
+                                .withResponse(response))
+                        return
+                    }
+
+                    try {
+                        onSuccess(text)
+                    } catch (e: Exception) {
+                        data.error(ApiError(tag, EXCEPTION_MOBIDZIENNIK_WEB_REQUEST)
+                                .withResponse(response)
+                                .withThrowable(e)
+                                .withApiResponse(text))
+                    }
                 }
 
-                if (text.contains("<h2>Problemy z wydajnością</h2>")) {
-                    data.error(ApiError(TAG, ERROR_MOBIDZIENNIK_WEB_SERVER_PROBLEM)
-                            .withResponse(response))
-                    return
-                }
-
-                try {
-                    onSuccess(text)
-                } catch (e: Exception) {
-                    data.error(ApiError(tag, EXCEPTION_MOBIDZIENNIK_WEB_REQUEST)
+                override fun onFailure(response: Response?, throwable: Throwable?) {
+                    if (retriesLeft > 0) {
+                        d(tag, "Request failure for $url - retrying ($retriesLeft left)")
+                        doRequest(retriesLeft - 1)
+                        return
+                    }
+                    data.error(ApiError(TAG, ERROR_REQUEST_FAILURE)
                             .withResponse(response)
-                            .withThrowable(e)
-                            .withApiResponse(text))
+                            .withThrowable(throwable))
                 }
             }
 
-            override fun onFailure(response: Response?, throwable: Throwable?) {
-                data.error(ApiError(TAG, ERROR_REQUEST_FAILURE)
-                        .withResponse(response)
-                        .withThrowable(throwable))
-            }
+            data.app.cookieJar.set("${data.loginServerName}.mobidziennik.pl", data.webSessionKey, data.webSessionValue)
+            data.app.cookieJar.set("${data.loginServerName}.mobidziennik.pl", "SERVERID", data.webServerId)
+
+            Request.builder()
+                    .url(url)
+                    .userAgent(MOBIDZIENNIK_USER_AGENT)
+                    .apply {
+                        when (method) {
+                            GET -> get()
+                            POST -> post()
+                        }
+                        parameters.map { (name, value) ->
+                            addParameter(name, value)
+                        }
+                    }
+                    .callback(callback)
+                    .build()
+                    .enqueue()
         }
 
-        data.app.cookieJar.set("${data.loginServerName}.mobidziennik.pl", data.webSessionKey, data.webSessionValue)
-        data.app.cookieJar.set("${data.loginServerName}.mobidziennik.pl", "SERVERID", data.webServerId)
-
-        Request.builder()
-                .url(url)
-                .userAgent(MOBIDZIENNIK_USER_AGENT)
-                .apply {
-                    when (method) {
-                        GET -> get()
-                        POST -> post()
-                    }
-                    parameters.map { (name, value) ->
-                        addParameter(name, value)
-                    }
-                }
-                .callback(callback)
-                .build()
-                .enqueue()
+        doRequest(1)
     }
 
     fun webGetFile(tag: String, action: String, targetFile: File, onSuccess: (file: File) -> Unit,
