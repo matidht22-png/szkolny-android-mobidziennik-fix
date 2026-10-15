@@ -100,7 +100,10 @@ class MobidziennikWebGrades(override val data: DataMobidziennik,
                             gradeSemester = profile.dateToSemester(gradeAddedDate)
                         }
 
-                        if (Regexes.MOBIDZIENNIK_GRADES_COUNT_TO_AVG.containsMatchIn(html)) {
+                        // "Liczona do średniej: tak/nie" — add every grade, but only
+                        // non-counting ones ("nie") get the NLDŚR description prefix.
+                        val countToAvg = Regexes.MOBIDZIENNIK_GRADES_COUNT_TO_AVG.find(html)?.let { it[1] }
+                        if (countToAvg != null) {
                             Regexes.MOBIDZIENNIK_GRADES_DETAILS.find(html)?.let { match ->
                                 val gradeName = match[1]
                                 var gradeDescription = match[2]
@@ -114,6 +117,8 @@ class MobidziennikWebGrades(override val data: DataMobidziennik,
                                     gradeDescription += "\n"+match[5].replace("<br>", "\n")
                                 }
 
+                                val description = if (countToAvg == "nie") "NLDŚR, $gradeDescription" else gradeDescription
+
                                 val gradeObject = Grade(
                                         profileId = profileId,
                                         id = gradeId,
@@ -123,7 +128,7 @@ class MobidziennikWebGrades(override val data: DataMobidziennik,
                                         weight = 0f,
                                         color = gradeColor,
                                         category = gradeCategory,
-                                        description = "NLDŚR, $gradeDescription",
+                                        description = description,
                                         comment = null,
                                         semester = gradeSemester,
                                         teacherId = teacherId,
