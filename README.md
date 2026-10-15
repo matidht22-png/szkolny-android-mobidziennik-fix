@@ -25,12 +25,11 @@
 > - **Pierwsze logowanie** — id i imię ucznia z `/dziennik/frekwencja` (fix błędu 906)
 > - **Funkcje** — usunięto martwy `ENDPOINT_MOBIDZIENNIK_API_MAIN` (fix 4× błędu 214)
 > - **Oceny** — regex „liczona do średniej" akceptuje teraz `tak|nie` (wcześniej odrzucał liczone oceny)
-> - **Plan lekcji** — pobieranie bazowego tygodnia `podstawowy` przy synchronizacji
+> - **Plan lekcji** — pobieranie bazowego tygodnia `podstawowy` przy synchronizacji oraz **każdego żądanego tygodnia** (np. przyszły) — dump `/api/zrzutbazy`, który wcześniej dostarczał inne tygodnie, jest usunięty
 > - **Kalendarz** — zachowanie zdarzeń `sprawdzian;` (kartkówki + sprawdziany) i `wycieczka;`
 > - **Wiadomości** — imiona nadawców przez `getTeacherByLastFirst()` (`teacherList` jest pusty po usunięciu dumpa)
-> - **Zachowanie** — nowy parser uwag i pochwał z `/mobile/zachowanie`
->
-> **Nie naprawiono:** zadania domowe — endpoint `/mobile/zadaniadomowe` działa, ale zmienił strukturę (karty zamiast tabel) i jest obecnie pusty; parser wymaga realnych danych do testu.
+> - **Zachowanie** — nowy parser uwag i pochwał z `/mobile/zachowanie` (encje `Notice`, które czyta ekran; dispatch endpointu był zakomentowany)
+> - **Zadania domowe** — nowy scraper listy z `/mobile/zadaniadomowe` (lista przychodziła z martwego dumpa `/api/zrzutbazy`) + podpięty `Feature(HOMEWORK)`
 >
 > Gotowy APK do testów znajdziesz w [release](https://github.com/matidht22-png/szkolny-android-mobidziennik-fix/releases).
 
