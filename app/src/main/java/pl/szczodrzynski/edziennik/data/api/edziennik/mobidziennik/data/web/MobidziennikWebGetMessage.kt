@@ -77,8 +77,8 @@ class MobidziennikWebGetMessage(override val data: DataMobidziennik,
                     val senderEl = recipientEl.select("td:eq(1)").first() ?: return@forEach
                     val senderName = senderEl.text().fixName()
 
-                    val teacher = data.teacherList.singleOrNull { it.fullNameLastFirst == senderName }
-                    val receiverId = teacher?.id ?: -1
+                    val teacher = data.getTeacherByLastFirst(senderName)
+                    val receiverId = teacher.id
 
                     var readDate = 0L
                     val isReadEl = recipientEl.select("td:eq(4)").first() ?: return@forEach

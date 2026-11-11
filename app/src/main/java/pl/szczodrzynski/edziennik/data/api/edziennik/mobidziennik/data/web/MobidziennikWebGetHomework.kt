@@ -5,12 +5,14 @@
 package pl.szczodrzynski.edziennik.data.api.edziennik.mobidziennik.data.web
 
 import org.greenrobot.eventbus.EventBus
+import org.jsoup.Jsoup
 import pl.szczodrzynski.edziennik.data.api.Regexes
 import pl.szczodrzynski.edziennik.data.api.edziennik.mobidziennik.DataMobidziennik
 import pl.szczodrzynski.edziennik.data.api.edziennik.mobidziennik.data.MobidziennikWeb
 import pl.szczodrzynski.edziennik.data.api.events.EventGetEvent
 import pl.szczodrzynski.edziennik.data.db.full.EventFull
 import pl.szczodrzynski.edziennik.ext.get
+import pl.szczodrzynski.edziennik.ext.fixWhiteSpaces
 import pl.szczodrzynski.edziennik.utils.models.Date
 import pl.szczodrzynski.edziennik.utils.models.Time
 
@@ -61,7 +63,11 @@ class MobidziennikWebGetHomework(override val data: DataMobidziennik,
                 event.addedDate = addedDate.combineWith(time)
             }
 
-            event.homeworkBody = ""
+            // Read the homework description from the detail page.
+            Regexes.MOBIDZIENNIK_WEB_HOMEWORK_CONTENT.find(text)?.let {
+                event.homeworkBody = Jsoup.parse(it[1]).text().fixWhiteSpaces()
+            } ?: run { event.homeworkBody = "" }
+
             event.isDownloaded = true
 
             data.eventList.add(event)

@@ -64,7 +64,12 @@ class MobidziennikWebMessagesSent(override val data: DataMobidziennik,
                 }
 
                 val recipientEl = item.select("td:eq(2) a span").first()
-                val recipientNames = recipientEl?.ownText()?.split(", ")
+                // The tooltip span is "Odbiorcy wiadomości:<br/>Name1, Name2" — drop the label.
+                val recipientNames = recipientEl?.ownText()
+                    ?.substringAfter("Odbiorcy wiadomości:")
+                    ?.split(", ")
+                    ?.map { it.trim() }
+                    ?.filter { it.isNotEmpty() }
                 val readState = when (readBy) {
                     0 -> 0
                     sentTo -> 1
@@ -72,7 +77,8 @@ class MobidziennikWebMessagesSent(override val data: DataMobidziennik,
                 }.toLong()
                 recipientNames?.forEach { recipientName ->
                     val name = recipientName.fixName()
-                    val recipientId = data.teacherList.singleOrNull { it.fullNameLastFirst == name }?.id ?: -1
+                    // teacherList is empty after the /api dump removal — resolve on demand.
+                    val recipientId = data.getTeacherByLastFirst(name).id
                     data.messageRecipientIgnoreList.add(MessageRecipient(profileId, recipientId, -1, readState, id))
                 }
 

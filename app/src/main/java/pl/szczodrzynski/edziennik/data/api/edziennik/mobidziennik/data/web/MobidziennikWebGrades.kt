@@ -113,8 +113,10 @@ class MobidziennikWebGrades(override val data: DataMobidziennik,
                                 val gradeValue = match[3].toFloatOrNull() ?: 0.0f
                                 val teacherName = match[4].fixWhiteSpaces()
 
-                                val teacherId = data.teacherList.singleOrNull { it.fullNameLastFirst == teacherName }?.id ?: -1
-                                val subjectId = data.subjectList.singleOrNull { it.longName == subjectName }?.id ?: -1
+                                // teacherList and subjectList are empty after the /api dump removal,
+                                // so resolve (and create) the objects on demand.
+                                val teacherId = data.getTeacherByLastFirst(teacherName).id
+                                val subjectId = data.getSubject(null, subjectName).id
 
                                 if (match[5].isNotEmpty()) {
                                     gradeDescription += "\n"+match[5].replace("<br>", "\n")

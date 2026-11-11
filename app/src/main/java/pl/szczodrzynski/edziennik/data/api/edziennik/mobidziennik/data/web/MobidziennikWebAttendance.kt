@@ -180,8 +180,8 @@ class MobidziennikWebAttendance(override val data: DataMobidziennik,
         //val team = lesson[3]
         val teacherName = lesson[3].fixName()
 
-        val teacherId = data.teacherList.singleOrNull { it.fullNameLastFirst == teacherName }?.id ?: -1
-        val subjectId = data.subjectList.singleOrNull { it.longName == subjectName }?.id ?: -1
+        val teacherId = data.getTeacherByLastFirst(teacherName).id
+        val subjectId = data.getSubject(null, subjectName).id
 
         var typeSymbol = ""
         for (symbol in typeSymbols) {

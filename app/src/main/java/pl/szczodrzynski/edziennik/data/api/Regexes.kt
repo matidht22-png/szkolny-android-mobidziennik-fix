@@ -151,6 +151,10 @@ object Regexes {
         """Wpisał\(a\):</td>\s+<th>\s+(.+?), (.+?), ([0-9]{1,2}) (.+?) ([0-9]{4}), godzina ([0-9:]+)""".toRegex()
     }
 
+    val MOBIDZIENNIK_WEB_HOMEWORK_CONTENT by lazy {
+        """Treść zadania:</td>\s+<td[^>]*>(.*?)</td>""".toRegex(DOT_MATCHES_ALL)
+    }
+
 
     val MOBIDZIENNIK_TIMETABLE_TOP by lazy {
         """<div class="plansc_top">.+?</div></div>""".toRegex(DOT_MATCHES_ALL)

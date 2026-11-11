@@ -62,14 +62,14 @@ class MobidziennikWebMessagesAll(override val data: DataMobidziennik,
                 if (type == TYPE_RECEIVED) {
                     // search sender teacher
                     val senderName = senderEl?.text().fixName()
-                    senderId = data.teacherList.singleOrNull { it.fullNameLastFirst == senderName }?.id
+                    senderId = senderName?.takeIf { it.isNotEmpty() }?.let { data.getTeacherByLastFirst(it).id }
                     data.messageRecipientList.add(MessageRecipient(profileId, -1, id))
                 } else {
                     // TYPE_SENT, so multiple recipients possible
                     val recipientNames = senderEl?.text()?.split(", ")
                     recipientNames?.forEach { recipientName ->
                         val name = recipientName.fixName()
-                        val recipientId = data.teacherList.singleOrNull { it.fullNameLastFirst == name }?.id ?: -1
+                        val recipientId = data.getTeacherByLastFirst(name).id
                         data.messageRecipientIgnoreList.add(MessageRecipient(profileId, recipientId, id))
                     }
                 }
